@@ -1,3 +1,1 @@
-﻿  parking_project2.c
-C:\dev\parking_project\parking_project_solution\parking_project2\parking_project2.c(25,8): warning C4013: 'main' undefined; assuming extern returning int
-  parking_project2.vcxproj -> C:\dev\parking_project\parking_project_solution\Debug\parking_project2.exe
+﻿  parking_project2.vcxproj -> C:\dev\parking_project\parking_project\parking_project_solution\Debug\parking_project2.exe

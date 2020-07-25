@@ -1,5 +1,6 @@
 #define _CRT_SECURE_NO_WARNINGS
 #include <stdio.h>
+#include <string.h>
 
 void visitor_mode()
 {
@@ -83,6 +84,7 @@ void Administor_mode()
 {
 	int Admin = 0;
 	int adminPassowrd = 0;
+	int password = 0;
 	
 	printf("This mode is Admin mode\n");
 	printf("Are you adminisrot?\n\n");
@@ -99,8 +101,12 @@ void Administor_mode()
 		if (adminPassowrd == 1234)
 		{
 			printf("What kind of work are you going to do?");
-			
-			//비밀번호 바꾸는 코드
+			printf("1)Change Password");
+			scanf("%d", &password);
+			if (password == 1)
+			{
+				//비밀번호 바꾸는 함수 부르기
+			}
 		}
 		else
 		{
@@ -127,6 +133,20 @@ void automatic_out_breaker()
 	//주차장에서 나올 때 차단기 열어주는 코드
 	//서보모터 각도 제어, 열리는 시간, 센서사용?-자동차인식
 }
+
+void password_initialization()
+{
+	char push[] = "*";
+	char initial[] = "";
+
+	scanf("%s", &initial);
+	
+	if (strcmp(initial, push) == 0)
+	{
+		//비밀번호 초기화하는 코딩
+	}
+}
+
 int main()
 {
 	int mode = 0;
