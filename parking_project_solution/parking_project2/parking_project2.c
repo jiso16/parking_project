@@ -2,11 +2,11 @@
 #include <stdio.h>
 #include <string.h>
 
-void visitor_mode()
+void visitor_mode() // 일반 방문자 모드
 {
 	int parkingPosition = 0;
 	int password = 0;
-	
+
 	printf("Please enter a parking space:");
 	scanf("%d", &parkingPosition);
 
@@ -17,7 +17,7 @@ void visitor_mode()
 		if (password == 1234)
 		{
 			printf("Have a nice day!\n");
-			
+
 			//차단기 열리는 코드
 		}
 		else
@@ -34,7 +34,7 @@ void visitor_mode()
 		if (password == 1234)
 		{
 			printf("Have a nice day!\n");
-			
+
 			//차단기 열리는 코드
 		}
 		else
@@ -51,7 +51,7 @@ void visitor_mode()
 		if (password == 1234)
 		{
 			printf("Have a nice day!\n");
-			
+
 			//차단기 열리는 코드
 		}
 		else
@@ -68,7 +68,7 @@ void visitor_mode()
 		if (password == 1234)
 		{
 			printf("Have a nice day!\n");
-			
+
 			//차단기 열리는 코드
 		}
 		else
@@ -80,12 +80,94 @@ void visitor_mode()
 	}
 }
 
-void Administor_mode()
+
+
+void set_password() // 비밀번호 바꾸는 코딩
+{
+	int parking[4] = { 1234,1234,1234,1234 }; // 초기비밀번호
+
+	int space = 0;
+	int password = 0;
+	int i = 0;
+
+	printf("Which digit of the password will you change?: ");
+	scanf("%d", &space);
+
+	if (space == 1)
+	{
+		printf("Enter the password for location 1: ");
+		scanf("%d", &password);
+
+		if (password == 1234)
+		{
+			printf("Enter the password you want to change: ");
+			scanf("%d", &parking[0]);
+			printf("\nparking1 password is: %d", parking[0]);
+		}
+		else
+		{
+			printf("Worng password!\n\n");
+			main();
+		}
+	}
+	else if (space == 2)
+	{
+		printf("Enter the password for location 2: ");
+		scanf("%d", &password);
+
+		if (password == 1234)
+		{
+			printf("Enter the password you want to change:");
+			scanf("%d", &parking[1]);
+			printf("\nparking1 password is: %d", parking[1]);
+		}
+		else
+		{
+			printf("Worng password!\n\n");
+			main();
+		}
+	}
+	else if (space == 3)
+	{
+		printf("Enter the password for location 3: ");
+		scanf("%d", &password);
+
+		if (password == 1234)
+		{
+			printf("Enter the password you want to change:");
+			scanf("%d", &parking[2]);
+			printf("\nparking1 password is: %d", parking[2]);
+		}
+		else
+		{
+			printf("Worng password!\n\n");
+			main();
+		}
+	}
+	else if (space == 4)
+	{
+		printf("Enter the password for location 4: ");
+		scanf("%d", &password);
+
+		if (password == 1234)
+		{
+			printf("Enter the password you want to change:");
+			scanf("%d", &parking[3]);
+			printf("\nparking1 password is: %d", parking[3]);
+		}
+		else
+		{
+			printf("Worng password!\n\n");
+			main();
+		}
+	}
+}
+void Administor_mode() // 관리자모드
 {
 	int Admin = 0;
 	int adminPassowrd = 0;
-	int password = 0;
-	
+	int number1 = 0;
+
 	printf("This mode is Admin mode\n");
 	printf("Are you adminisrot?\n\n");
 	printf("1) Yes\n");
@@ -100,12 +182,13 @@ void Administor_mode()
 		scanf("%d", &adminPassowrd);
 		if (adminPassowrd == 1234)
 		{
-			printf("What kind of work are you going to do?");
-			printf("1)Change Password");
-			scanf("%d", &password);
-			if (password == 1)
+			printf("What kind of work are you going to do?\n");
+			printf("1)Change Password\n");
+			printf("Enter the number: ");
+			scanf("%d", &number1);
+			if (number1 == 1)
 			{
-				//비밀번호 바꾸는 함수 부르기
+				set_password();
 			}
 		}
 		else
@@ -118,34 +201,10 @@ void Administor_mode()
 	{
 		printf("Please use visitor mode\n\n");
 		main();
-		
+
 	}
 }
 
-void automatic_in_breaker()
-{
-	//주차장 들어갈 때 차단기 열어주는 코드
-	//서보모터 각도 제어, 열리는 시간
-}
-
-void automatic_out_breaker()
-{
-	//주차장에서 나올 때 차단기 열어주는 코드
-	//서보모터 각도 제어, 열리는 시간, 센서사용?-자동차인식
-}
-
-void password_initialization()
-{
-	char push[] = "*";
-	char initial[] = "";
-
-	scanf("%s", &initial);
-	
-	if (strcmp(initial, push) == 0)
-	{
-		//비밀번호 초기화하는 코딩
-	}
-}
 
 int main()
 {
