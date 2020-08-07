@@ -1,6 +1,8 @@
 #define F_CPU 16000000UL // 16 MHz
 #include <avr/io.h>
+#include <stdio.h>
 #include <util/delay.h>
+//#include <stdlib.h> 
 #include "clcd_D8.h"
 //
 char KeyScan(void)
@@ -41,21 +43,26 @@ char KeyScan(void)
 	return KeyBuf; // Key 없으면 0xFF 리턴
 }
 
-void main(void)
+int main(void)
 {
 	char buf[30],key;
+	int input = 0;
+	int i=0;
 	clcd_port_init();
 	clcd_init_8bit();
 	while(1)
 	{
 		key=KeyScan();
-		clcd_position(0, 0);
+		input = atoi(key); 
+		clcd_position(0,0);
 		if(key!=0xFF )
 		{
-			sprintf(buf,"key %c",key);
+			clcd_position(0,i);
+			sprintf(buf,"%d",input);
 			clcd_str(buf);
+			i++;
+			if(i==16)i=0;
 		}
-		else clcd_str("none     ");
-		_delay_ms(100);
+		_delay_ms(20);
 	}
 }

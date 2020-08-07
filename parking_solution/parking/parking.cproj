@@ -12,9 +12,9 @@
     <OutputFileName>$(MSBuildProjectName)</OutputFileName>
     <OutputFileExtension>.elf</OutputFileExtension>
     <OutputDirectory>$(MSBuildProjectDirectory)\$(Configuration)</OutputDirectory>
-    <AssemblyName>lcd_key</AssemblyName>
-    <Name>lcd_key</Name>
-    <RootNamespace>lcd_key</RootNamespace>
+    <AssemblyName>parking</AssemblyName>
+    <Name>parking</Name>
+    <RootNamespace>parking</RootNamespace>
     <ToolchainFlavour>Native</ToolchainFlavour>
     <KeepTimersRunning>true</KeepTimersRunning>
     <OverrideVtor>false</OverrideVtor>
