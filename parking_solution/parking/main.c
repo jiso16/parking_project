@@ -5,7 +5,7 @@
 #include <string.h>
 #include "clcd_D8.h"
 
-enum WindowPosition { INIT, Admin_1, Admin_2, User_1, User_PW} currentPage ;
+enum WindowPosition { INIT, Admin_1, Admin_2, User_1, User_PW1, User_PW2, User_PW3, User_PW4,} currentPage ;
 
 char KeyScan(void);
 int key_input();
@@ -26,19 +26,17 @@ int main()
 	
 	clcd_position(0, 0);
 	clcd_str("Parking System");
-	_delay_ms(300);
+	_delay_ms(200);
 	clcd_init_8bit();
-	
+	clcd_str("Select the mode");
+	_delay_ms(200);
+	clcd_init_8bit();
 	clcd_str("1) Admin mode");
 	clcd_position(1, 0);
 	clcd_str("2) Visitor mode");
-	_delay_ms(300);
+	_delay_ms(200);
 	clcd_init_8bit();
-	clcd_str("Select the mode");
-	clcd_position(1, 0);
-	clcd_str("Press the number");
-	_delay_ms(300);
-	clcd_init_8bit();
+	
 
 	while(1)
 	{
@@ -92,10 +90,10 @@ int main()
 					}
 					else
 					{
+						currentPage = INIT;
 						clcd_str("Choose 1 or 2");
 						_delay_ms(300);
 						clcd_init_8bit();
-						currentPage = INIT;
 					}
 					
 				}
@@ -105,7 +103,7 @@ int main()
 					clcd_str("aaaaaa");
 					_delay_ms(300);
 					clcd_init_8bit();
-					if (key==49505152)
+					if (key==49)
 					{
 						currentPage = Admin_2;
 						clcd_position(1, 0);
@@ -116,7 +114,11 @@ int main()
 					}
 					else 
 					{
-						
+						currentPage = INIT;
+						clcd_position(1, 0);
+						clcd_str("Wrong PW");
+						_delay_ms(300);
+						clcd_init_8bit();
 					}
 					_delay_ms(300);
 					clcd_init_8bit();
