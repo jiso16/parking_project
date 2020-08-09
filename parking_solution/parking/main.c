@@ -4,21 +4,30 @@
 #include <stdio.h>
 #include <string.h>
 #include "clcd_D8.h"
+#define bufferSize 4
 
-enum WindowPosition { INIT, Admin_1, Admin_2, User_1, User_PW1, User_PW2, User_PW3, User_PW4,} currentPage ;
+char KeyScan();
+void checkPassword();
+void putValueToBuffer(char value);
+void clearBuffer();
+void enterPassword();
+int isBufferEmpty();
+int isMatchKey(int mode);
 
-char KeyScan(void);
-int key_input();
+enum WindowPosition { OPEN, INIT, Admin_1, Admin_2, User_1, User_PW} currentPage ;
+char buf[bufferSize];
+char key;
+char adminPw[4]={49,50,51,52};
 
 int main()
 {
 	//int num=1;
-	char buf[30],key;
+	//char buf[30],key;
 	//char area1Pw[4]={49,50,51,52};
 	//char area2Pw[4]={49,50,51,52};
 	//char area3Pw[4]={49,50,51,52};
 	//char area4Pw[4]={49,50,51,52};
-	//char adminPw[4]={49,50,51,52};
+	
 		
 	
 	clcd_port_init();
@@ -28,35 +37,14 @@ int main()
 	clcd_str("Parking System");
 	_delay_ms(200);
 	clcd_init_8bit();
-	clcd_str("Select the mode");
-	_delay_ms(200);
-	clcd_init_8bit();
-	clcd_str("1) Admin mode");
-	clcd_position(1, 0);
-	clcd_str("2) Visitor mode");
-	_delay_ms(200);
-	clcd_init_8bit();
-	
-
+		
 	while(1)
 	{
 		
-		_delay_us(50);
+		_delay_us(50);	
+		key = KeyScan();
 		
-		key=KeyScan();
-		for(int i=0; i<1; i++)
-		{
-			if(key!=0xFF )
-			{
-				//clcd_position(0,i);
-				sprintf(buf,"Num: %c",key);
-				clcd_str(buf);			
-			}
-			_delay_ms(70);
-			
-		}
-		clcd_init_8bit();
-		if( key == 0)
+		if(key == 0xFF && currentPage != OPEN)
 		{
 			continue;
 		}
@@ -64,29 +52,43 @@ int main()
 		{
 			switch(currentPage)
 			{
+				case OPEN :
+				{
+					clcd_str("Select the mode");
+					_delay_ms(200);
+					clcd_init_8bit();
+					clcd_str("1) Admin mode");
+					clcd_position(1, 0);
+					clcd_str("2) Visitor mode");
+					currentPage = INIT;
+					break;
+				}
 				case INIT :
 				{
-					if(key == 49)
+					clcd_init_8bit();
+					clcd_str(key);
+					_delay_ms(300);
+					clcd_init_8bit();
+		
+					
+					if(isMatchKey(49) == 1)
 					{
 						//관리자모드 진입
 						currentPage = Admin_1;
 						clcd_str("Admin mode.");
 						clcd_position(1, 0);
 						clcd_str("Enter the PW");
-						_delay_ms(300);
-						clcd_init_8bit();
-						//num = 4;
+						enterPassword();
+						checkPassword();
 						
 					}
-					else if (key == 50)
+					else if (isMatchKey(50))
 					{
 						//유저모드 진입
 						currentPage = User_1;
 						clcd_str("Visitor mode.");
 						clcd_position(1, 0);
 						clcd_str("Enter your area");
-						_delay_ms(300);
-						clcd_init_8bit();
 					}
 					else
 					{
@@ -95,6 +97,7 @@ int main()
 						_delay_ms(300);
 						clcd_init_8bit();
 					}
+					break;
 					
 				}
 				case Admin_1 :
@@ -103,7 +106,7 @@ int main()
 					clcd_str("aaaaaa");
 					_delay_ms(300);
 					clcd_init_8bit();
-					if (key==49)
+					if (isMatchKey(49))
 					{
 						currentPage = Admin_2;
 						clcd_position(1, 0);
@@ -122,10 +125,12 @@ int main()
 					}
 					_delay_ms(300);
 					clcd_init_8bit();
+					break;
 				}
+				
 				case User_1 :
 				{
-					if(key == 49)
+					if(isMatchKey(49))
 					{
 						clcd_str("Area 1");
 						clcd_position(1,0);
@@ -135,7 +140,7 @@ int main()
 						currentPage= User_PW;
 						
 					}
-					else if (key==50)
+					else if (isMatchKey(50))
 					{
 						clcd_str("Area 2");
 						clcd_position(1,0);
@@ -144,7 +149,7 @@ int main()
 						clcd_init_8bit();
 						currentPage= User_PW;
 					}
-					else if (key==51)
+					else if (isMatchKey(51))
 					{
 						clcd_str("Area 3");
 						clcd_position(1,0);
@@ -153,7 +158,7 @@ int main()
 						clcd_init_8bit();
 						currentPage= User_PW;
 					}
-					else if (key==52)
+					else if (isMatchKey(52))
 					{
 						clcd_str("Area 4");
 						clcd_position(1,0);
@@ -171,16 +176,17 @@ int main()
 
 					}
 					
-					
+					break;
 					
 				}
 				case Admin_2 :
 				{
-					
+					break;
 				}
 				case User_PW :
 				{
 					//if
+					break;
 				}
 				
 			}
@@ -191,8 +197,78 @@ int main()
 	return 0;	
 }
 
-char KeyScan(void)
+void checkPassword(){
+	int isMatch = 1;
+	for(int i=0; i<4; i++)
+	{
+		if(buf[i] != adminPw[i]){
+			isMatch = 0;
+		}		
+	}
+	
+	if(isMatch == 1)
+	{
+		currentPage = Admin_1;
+	}
+	else
+	{
+		currentPage = OPEN;
+	}
+	// buf 내용을 가져와서 ADMIN 비번이랑 비교한다
+	// 맞으면 어드민 모드, 아니면 1,2 번 선택화면으로 보낸다., 비번이 틀렸습니다. 	
+}
+
+void putValueToBuffer(char value){
+	for(int i = 0; i < bufferSize; i ++){
+		if(buf[i] == '\0'){
+			buf[i] = value;
+			return;
+		}
+	}
+}
+
+void clearBuffer(){
+	for(int i = 0; i < bufferSize; i ++){		
+		buf[i] = '\0';	
+	}
+}
+
+int isBufferEmpty(){
+	for(int i = 0; i < bufferSize; i ++){
+		if(buf[i] != '\0'){
+			return 0;
+		}
+	}
+	
+	return 1;
+}
+
+int isMatchKey(int mode){
+	if(key == mode){
+		return 1;
+	}else{
+		return 0;
+	}
+}
+
+void enterPassword(){
+	int isComplete = 0;
+	while(isComplete != 1){
+		char key = KeyScan();
+		if(key !=  '\0'){
+			putValueToBuffer(key);
+			clcd_init_8bit();
+			clcd_str(buf);
+		}
+		if(buf[3] != '\0'){
+			isComplete = 1;
+		}
+	}
+}
+
+char KeyScan()
 {
+	//char KeyBuf[30];
 	char KeyBuf=0xFF;  // 키 값이 들어갈 버퍼, 초기값 0xFF
 
 	PORTE=0xFF;         // 포트 초기값, 입력핀 내부풀업저항 사용
@@ -225,24 +301,6 @@ char KeyScan(void)
 	if((PINE&0x20)==0)KeyBuf='0';
 	if((PINE&0x40)==0)KeyBuf='#';
 	PORTE|=8; // 4번째 줄 해제
-
-	return KeyBuf; // Key 없으면 0xFF 리턴
-}
-
-int key_input( )
-{
-	char buf[30], key;
-	//clcd_port_init();
-	//clcd_init_8bit();
 	
-	key=KeyScan();
-	if(key!=0xFF )
-	{
-		sprintf(buf,"mode: %c",key);
-		clcd_str(buf);
-		
-	}
-	_delay_ms(500);
-	clcd_init_8bit();
-	return key;
+	return KeyBuf;
 }
