@@ -22,8 +22,6 @@ int main()
 	clcd_init_8bit();
 	
 	clcd_str("Program Start");
-	clcd_position(1,0);
-	clcd_str("Enter the PW");
 	
 	while(1)
 	{
@@ -34,6 +32,12 @@ int main()
 		}
 		else
 		{
+			clcd_port_init();
+			clcd_position(1,0);
+			sprintf(buf, "%c", key);
+			clcd_str(buf);
+			_delay_ms(100);
+			clcd_init_8bit();
 			keyInput();
 		}
 	}
@@ -42,13 +46,14 @@ int main()
 void keyInput()
 {
 	clcd_init_8bit();
+	clcd_str("Enter the PW");
 	int i = 0;
 	while(1)
 	{
 		key=KeyScan();
 		if(key != 0xFF)
 		{
-			clcd_position(0,i);
+			clcd_position(1,i);
 			sprintf(buf, "%c", key);
 			clcd_str(buf);
 			inputPassword[i] = key;
@@ -125,3 +130,4 @@ char KeyScan()
 	
 	return KeyBuf;
 }
+
