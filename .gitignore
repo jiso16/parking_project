@@ -14,3 +14,8 @@ parking_solution/parking/Debug
 parking_project_solution/avr_parking/Debug
 parking_project_solution/parking_project/Debug
 parking_project_solution/enum_project/Debug
+exercise_solution/exercise/Debug
+parking_Solution2/parking_Solution2/Debug
+*.xml
+*.cproj
+*.atsln
