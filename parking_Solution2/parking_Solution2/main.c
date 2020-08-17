@@ -6,10 +6,11 @@
 #include "clcd_D8.h"
 
 char KeyScan();
-void PwInput();
-void check_PW();
-void userPwInput ();
-void checkUserPW();
+void PwInput(); //관리자 모드 비밀번호 입력
+void checkAdminPW(); // 관리자 모드 비밀번호 확인
+void changePw();//관리자 모드에서 비번 바꾸기
+void userPwInput (); // 유저 비밀번호 입력
+void checkUserPW(); // 유저 비밀번호 확인
 
 enum WindowPosition { OPEN, INIT, Admin_1, Admin_2, User_1, User_PW} currentPage ;
 
@@ -18,10 +19,10 @@ char KeyBuf[30];
 char buf[10];
 char inputPassword [10];
 char initalPw [10]="1234";
-//char area_PW [5][10]= {"0","1234","1234","1234","1234"};
-char area1_PW [10]= "1234";
+char area_PW [4][10]= {"1234","1234","1234","1234"};
+//char area1_PW [10]= "1234";
 //char area3_PW [10]= "1234";
-//char area4_PW [10]= "1234"; 
+//char area4_PW [10]= "1234";
 
 int main()
 {
@@ -61,6 +62,7 @@ int main()
 				case INIT:
 				{
 					clcd_init_8bit();
+					clcd_str("mode ");
 					sprintf(buf,"%c",key);
 					clcd_str(buf);
 					_delay_ms(100);
@@ -70,8 +72,6 @@ int main()
 					if(strcmp(buf,"1")==0)
 					{
 						//관리자모드 진입
-						//currentPage = Admin_1;
-						clcd_str("Admin mode.");
 						PwInput();
 						
 					}
@@ -85,7 +85,7 @@ int main()
 					}
 					else
 					{
-						currentPage = INIT;
+						currentPage = OPEN;
 						clcd_str("Choose 1 or 2");
 						_delay_ms(300);
 						clcd_init_8bit();
@@ -94,6 +94,8 @@ int main()
 				}
 				case Admin_1 :
 				{
+					clcd_init_8bit();
+					clcd_str("Area ");
 					sprintf(buf,"%c",key);
 					clcd_str(buf);
 					_delay_ms(100);
@@ -101,31 +103,33 @@ int main()
 					
 					if (strcmp(buf,"1")==0)
 					{
-						clcd_str("Area 1");	
-						changePw1(buf);
-										
+						changePw(0);
 					}
 					else if(strcmp(buf,"2")==0)
 					{
-						
+						changePw(1);
 					}
 					else if(strcmp(buf,"3")==0)
 					{
-						
+						changePw(2);
 					}
 					else if(strcmp(buf,"4")==0)
 					{
-						
+						changePw(3);
 					}
 					else
 					{
-						
+						clcd_str("Wrong Space");
+						_delay_ms(300);
+						clcd_init_8bit();
+						currentPage = OPEN;
 					}
 					break;
 				}
 				case User_1 :
 				{
 					clcd_init_8bit();
+					clcd_str("Area ");
 					sprintf(buf,"%c",key);
 					clcd_str(buf);
 					_delay_ms(100);
@@ -133,38 +137,26 @@ int main()
 					
 					if(strcmp(buf,"1")==0)
 					{
-						clcd_str("Area 1");
-						_delay_ms(200);
-						clcd_init_8bit();
-						userPwInput();						
+						userPwInput(0);
 					}
 					else if (strcmp(buf,"2")==0)
 					{
-						clcd_str("Area 2");
-						_delay_ms(200);
-						clcd_init_8bit();
-						userPwInput();
+						userPwInput(1);
 					}
 					else if (strcmp(buf,"3")==0)
 					{
-						clcd_str("Area 3");
-						_delay_ms(200);
-						clcd_init_8bit();
-						userPwInput();
+						userPwInput(2);
 					}
 					else if (strcmp(buf,"4")==0)
 					{
-						clcd_str("Area 4");
-						_delay_ms(200);
-						clcd_init_8bit();
-						userPwInput();
+						userPwInput(3);
 					}
 					else
 					{
 						clcd_str("Wrong Space");
 						_delay_ms(300);
 						clcd_init_8bit();
-						currentPage = INIT;
+						currentPage = OPEN;
 
 					}
 					
@@ -179,8 +171,11 @@ int main()
 void PwInput() // 관리자모드 비번 입력
 {
 	clcd_init_8bit();
-	clcd_str("Enter the PW");
-	int i = 0;
+
+	clcd_str("Enter the Admin");
+	clcd_position(1,0);
+	clcd_str("password:");
+	int i = 9;
 	while(1)
 	{
 		key=KeyScan();
@@ -189,18 +184,18 @@ void PwInput() // 관리자모드 비번 입력
 			clcd_position(1,i);
 			sprintf(buf, "%c", key);
 			clcd_str(buf);
-			inputPassword[i] = key;
+			inputPassword[i-9] = key;
 			i++;
 			if(strcmp(buf,"*")==0)
 			{
-				check_PW();
+				checkAdminPW();
 				break;
 			}
 		}
 	}
 }
 
-void check_PW() // 관리자 모드 비번 확인
+void checkAdminPW() // 관리자 모드 비번 확인
 {
 	clcd_init_8bit();
 	int isMatch = 1;
@@ -229,35 +224,35 @@ void check_PW() // 관리자 모드 비번 확인
 	
 }
 
-void changePw1() //관리자 모드에서 비번 바꾸기
+void changePw(int num) //관리자 모드에서 비번 바꾸기
 {
 	clcd_init_8bit();
 	int i = 0;
-
-	for(int i=0; i<4; i++)
+	clcd_str("Enter the new PW");
+	while(1)
 	{
 		key=KeyScan();
 		if(key != 0xFF)
 		{
-			clcd_position(0,i);
+			clcd_position(1,i);
 			sprintf(buf, "%c", key);
 			clcd_str(buf);
-			area1_PW[i] = key;
+			area_PW[num][i] = key;
 			i++;
-			/*if(strcmp(buf,"*")==0)
+			if(strcmp(buf,"*")==0)
 			{
-				clcd_str("Area1 PW changed!");
-			}
-			else if(strcmp(buf,"#")==0)
-			{
+				clcd_init_8bit();
+				clcd_str("Password changed!");
+				_delay_ms(100);
 				currentPage = OPEN;
-			}*/
+				break;
+			}
 		}
-		clcd_str("Area1 PW changed!");
 	}
+	clcd_str("Area1 PW changed!");
 }
 
-void userPwInput() // 유저 비번 확인
+void userPwInput(int num) // 유저 비번 확인
 {
 	clcd_init_8bit();
 	clcd_str("Enter the PW");
@@ -274,24 +269,20 @@ void userPwInput() // 유저 비번 확인
 			i++;
 			if(strcmp(buf,"*")==0)
 			{
-				checkUserPW(buf);
-			}
-			else if(strcmp(buf,"#")==0)
-			{
-				char buf[10]="";
-				main();
+				checkUserPW(num);
+				break;
 			}
 		}
 	}
 }
 
-void checkUserPW(int buf) // 유저 모드 비번 확인
+void checkUserPW(int num2) // 유저 모드 비번 확인
 {
 	clcd_init_8bit();
 	int isMatch = 1;
 	for (int j = 0; j<4; j++)
 	{
-		if(inputPassword[j] != area_PW[buf][j])
+		if(inputPassword[j] != area_PW[num2][j])
 		{
 			isMatch = 0;
 		}
@@ -299,10 +290,15 @@ void checkUserPW(int buf) // 유저 모드 비번 확인
 	if(isMatch == 1)
 	{
 		clcd_str("Correct");
+		_delay_ms(100);
+		currentPage = OPEN;
+		//게이트 열리는 코딩
 	}
 	else
 	{
 		clcd_str("!error!");
+		_delay_ms(100);
+		currentPage = OPEN;
 	}
 	//inputPassword[10]="";
 	
