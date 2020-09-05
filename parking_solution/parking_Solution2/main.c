@@ -25,7 +25,7 @@ char keybuf[30];
 char buf[10];
 char input_password [10];
 char inital_password [10]="1234";
-char area_password [4][10]= {"1234","1234","1234","1234"};
+char area_password [3][5]= {" "," "," "};
 
 int main()
 {
@@ -92,10 +92,6 @@ int main()
 					{
 						ChangePw(2);
 					}
-					else if(strcmp(buf,"4")==0)
-					{
-						ChangePw(3);
-					}
 					else
 					{
 						Warning();
@@ -117,23 +113,17 @@ int main()
 					{
 						UserPwInput(2);
 					}
-					else if (strcmp(buf,"4")==0)
-					{
-						UserPwInput(3);
-					}
 					else
 					{
 						Warning();
-
 					}
-					
 					break;
-					
 				}
 			}
 		}
 	}
 }
+
 void Open()
 {
 	clcd_init_8bit();
@@ -242,7 +232,7 @@ void CheckAdminPW() // 관리자 모드 비번 확인
 	}
 	else
 	{
-		clcd_str("error");
+		clcd_str("Wrong PW");
 		currentPage = OPEN;
 	}
 	
@@ -273,7 +263,6 @@ void ChangePw(int num) //관리자 모드에서 비번 바꾸기
 			}
 		}
 	}
-	clcd_str("Area1 PW changed!");
 }
 
 void UserPwInput(int num) // 유저 비번 확인
@@ -320,7 +309,7 @@ void CheckUserPW(int num2) // 유저 모드 비번 확인
 	}
 	else
 	{
-		clcd_str("!error!");
+		clcd_str("Wrong PW");
 		_delay_ms(100);
 		currentPage = OPEN;
 	}
@@ -336,28 +325,28 @@ char KeyScan()
 	DDRE=0x0F;         // 비트0,1,2,3 출력으로 지정
 
 	PORTE&=~1; // 1번째 줄 선택
-	_delay_ms(2);
+	_delay_ms(3.5);
 	if((PINE&0x10)==0)keybuf='1';
 	if((PINE&0x20)==0)keybuf='2';
 	if((PINE&0x40)==0)keybuf='3';
 	PORTE|=1; // 1번째 줄 해제
 
 	PORTE&=~2; // 2번째 줄 선택
-	_delay_ms(2);
+	_delay_ms(3.5);
 	if((PINE&0x10)==0)keybuf='4';
 	if((PINE&0x20)==0)keybuf='5';
 	if((PINE&0x40)==0)keybuf='6';
 	PORTE|=2; // 2번째 줄 해제
 
 	PORTE&=~4; // 3번째 줄 선택
-	_delay_ms(2);
+	_delay_ms(3.5);
 	if((PINE&0x10)==0)keybuf='7';
 	if((PINE&0x20)==0)keybuf='8';
 	if((PINE&0x40)==0)keybuf='9';
 	PORTE|=4; // 3번째 줄 해제
 
 	PORTE&=~8; // 4번째 줄 선택
-	_delay_ms(2);
+	_delay_ms(3.5);
 	if((PINE&0x10)==0)keybuf='*';
 	if((PINE&0x20)==0)keybuf='0';
 	if((PINE&0x40)==0)keybuf='#';
@@ -365,4 +354,5 @@ char KeyScan()
 	
 	return keybuf;
 }
+
 
