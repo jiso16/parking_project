@@ -1,7 +1,8 @@
+#define F_CPU 16000000UL
+
 #include <avr/io.h>
 #include <util/delay.h>
 #include <stdio.h>
-
 
 #define Trig1_ON PORTD|=1 //트리거1
 #define Trig2_ON PORTD|=2 //트리거2
@@ -73,11 +74,11 @@ int main(void)
 				{
 					PORTF = 0b00000110;
 				}
-			
+				
 			}
 		}
 		else if(range[0]>50) // range[0]이 범위 밖일 때
-		{			
+		{
 			_delay_ms(25); Trig2_ON; _delay_us(10); Trig2_OFF; getEcho(1);
 			if((range[0]>50) && (range[1]<50))
 			{
