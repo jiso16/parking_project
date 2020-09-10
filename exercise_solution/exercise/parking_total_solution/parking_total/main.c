@@ -19,6 +19,9 @@ void AdminAreaNum();
 void AreaNumber();
 void GateOpen();
 void getEcho(int ch);
+int UltrasonicSensor(void);
+
+enum eWindowPosition { OPEN, INIT, Admin_1, User_1} currentPage ;
 
 //초음파센서 설정
 #define Trig1_ON PORTD|=1 //트리거1
@@ -45,7 +48,7 @@ float range_F;
 
 char temp[3]={'0','0','0'};
 
-enum eWindowPosition { OPEN, INIT, Admin_1, User_1} currentPage ;
+
 
 
 int main()
@@ -55,7 +58,7 @@ int main()
 	
 	clcd_position(0, 0);
 	clcd_str("Parking System");
-	_delay_ms(200);
+	_delay_ms(2000);
 	clcd_init_8bit();
 	
 	while(1)
@@ -155,11 +158,90 @@ void getEcho(int ch){ // ch=0~3
 	range[ch]=(unsigned int)range_F; // range[ch]에 저장
 }
 
+// int UltrasonicSensor(void)
+// {
+// 	
+// 	DDRD=0x0F;  // PD0~3 ouput Trigger, PD4~7 input Echo
+// 	DDRF=0x07;  //led output
+// 
+// 	TCCR1B=0x08;  // Set timer up in CTC mode
+// 	_delay_ms(100);
+// 	
+// 	while(1)
+// 	{
+// 		_delay_ms(25); Trig1_ON; _delay_us(10); Trig1_OFF; getEcho(0);
+// 		
+// 		if ((range[0]<50)) // range[0]이 범위 안일 때
+// 		{
+// 			_delay_ms(25); Trig2_ON; _delay_us(10); Trig2_OFF; getEcho(1);
+// 			
+// 			
+// 			if ((range[0]<50) && (range[1]<50))
+// 			{
+// 				_delay_ms(25); Trig3_ON; _delay_us(10); Trig3_OFF; getEcho(2);
+// 				
+// 				if ((range[0]<50) && (range[1]<50) && (range[2]<50))
+// 				{
+// 					PORTF = 0b00000000;
+// 				}
+// 				else if((range[0]<50) && (range[1]<50) && (range[2]>50))
+// 				{
+// 					PORTF = 0b00000100;
+// 				}
+// 			}
+// 			else if((range[0]<50) && (range[1]>50))
+// 			{
+// 				_delay_ms(25); Trig3_ON; _delay_us(10); Trig3_OFF; getEcho(2);
+// 				
+// 				if ((range[0]<50) && (range[1]>50) && (range[2]<50))
+// 				{
+// 					PORTF = 0b00000010;
+// 				}
+// 				else if((range[0]<50) && (range[1]>50) && (range[2]>50))
+// 				{
+// 					PORTF = 0b00000110;
+// 				}
+// 				
+// 			}
+// 		}
+// 		else if(range[0]>50) // range[0]이 범위 밖일 때
+// 		{
+// 			_delay_ms(25); Trig2_ON; _delay_us(10); Trig2_OFF; getEcho(1);
+// 			if((range[0]>50) && (range[1]<50))
+// 			{
+// 				_delay_ms(25); Trig3_ON; _delay_us(10); Trig3_OFF; getEcho(2);
+// 				if ((range[0]>50) && (range[1]<50) && (range[2]<50))
+// 				{
+// 					PORTF = 0b00000001;
+// 				}
+// 				else if ((range[0]>50) && (range[1]<50) && (range[2]>50))
+// 				{
+// 					PORTF = 0b00000101;
+// 				}
+// 			}
+// 			else if((range[0]>50) && (range[1]>50))
+// 			{
+// 				_delay_ms(25); Trig3_ON; _delay_us(10); Trig3_OFF; getEcho(2);
+// 				if ((range[0]>50) && (range[1]>50) && (range[2]<50))
+// 				{
+// 					PORTF = 0b00000011;
+// 				}
+// 				else if ((range[0]>50) && (range[1]>50) && (range[2]>50))
+// 				{
+// 					PORTF = 0b00000111;
+// 				}
+// 			}
+// 			
+// 		}
+// 		
+// 	}
+// }
+
 void Open()
 {
 	clcd_init_8bit();
 	clcd_str("Select the mode");
-	_delay_ms(200);
+	_delay_ms(2000);
 	clcd_init_8bit();
 	clcd_str("1) Admin mode");
 	clcd_position(1, 0);
@@ -173,7 +255,7 @@ void Init()
 	clcd_str("mode ");
 	sprintf(buf,"%c",key);
 	clcd_str(buf);
-	_delay_ms(100);
+	_delay_ms(1000);
 	clcd_init_8bit();
 }
 
@@ -189,7 +271,7 @@ void Warning()
 {
 	currentPage = OPEN;
 	clcd_str("Wrong Number!");
-	_delay_ms(300);
+	_delay_ms(3000);
 	clcd_init_8bit();
 }
 
@@ -199,7 +281,7 @@ void AdminAreaNum()
 	clcd_str("Area ");
 	sprintf(buf,"%c",key);
 	clcd_str(buf);
-	_delay_ms(100);
+	_delay_ms(1000);
 	clcd_init_8bit();
 }
 
@@ -209,7 +291,7 @@ void AreaNumber()
 	clcd_str("Area ");
 	sprintf(buf,"%c",key);
 	clcd_str(buf);
-	_delay_ms(100);
+	_delay_ms(1000);
 	clcd_init_8bit();
 }
 
@@ -254,7 +336,7 @@ void CheckAdminPW() // 관리자 모드 비번 확인
 	if(isMatch == 1)
 	{
 		clcd_str("Okay");
-		_delay_ms(100);
+		_delay_ms(1000);
 		clcd_init_8bit();
 		clcd_str("Which position");
 		clcd_position(1,0);
@@ -288,7 +370,7 @@ void ChangePw(int num) //관리자 모드에서 비번 바꾸기
 			{
 				clcd_init_8bit();
 				clcd_str("Password changed!");
-				_delay_ms(100);
+				_delay_ms(1000);
 				currentPage = OPEN;
 				break;
 			}
@@ -334,15 +416,16 @@ void CheckUserPW(int num2) // 유저 모드 비번 확인
 	if(isMatch == 1)
 	{
 		clcd_str("Correct");
-		_delay_ms(100);
+		_delay_ms(1000);
+		clcd_init_8bit();
 		GateOpen();
-		//currentPage = OPEN;
+		currentPage = OPEN;
 		//게이트 열리는 코딩
 	}
 	else
 	{
 		clcd_str("Wrong PW");
-		_delay_ms(100);
+		_delay_ms(1000);
 		currentPage = OPEN;
 	}
 	
@@ -352,19 +435,15 @@ void GateOpen()
 {
 	DDRB=0x20;   // PB5 out
 	TCCR1A=0x82; TCCR1B=0x1A; OCR1A=3000; ICR1=19999; // OCR1A -> OC Clear / Fast PWM TOP = ICR1 / 8ºÐÁÖ
-	while(1)
-	{
-		OCR1A = 1900; // 0 degree
-		_delay_ms(3000);
-		OCR1A = 700; // 90 degree
-		_delay_ms(3000);
-	}
+	
+	OCR1A = 1900; // 0 degree
+	_delay_ms(3000);
+	OCR1A = 700; // 90 degree
+	_delay_ms(30);
+	
+	//currentPage = OPEN;
 }
 
-void UltrasonicSensor()
-{
-	
-}
 
 char KeyScan()
 {
@@ -375,28 +454,28 @@ char KeyScan()
 	DDRE=0x0F;         // 비트0,1,2,3 출력으로 지정
 
 	PORTE&=~1; // 1번째 줄 선택
-	_delay_ms(3.5);
+	_delay_ms(30);
 	if((PINE&0x10)==0)keybuf='1';
 	if((PINE&0x20)==0)keybuf='2';
 	if((PINE&0x40)==0)keybuf='3';
 	PORTE|=1; // 1번째 줄 해제
 
 	PORTE&=~2; // 2번째 줄 선택
-	_delay_ms(3.5);
+	_delay_ms(30);
 	if((PINE&0x10)==0)keybuf='4';
 	if((PINE&0x20)==0)keybuf='5';
 	if((PINE&0x40)==0)keybuf='6';
 	PORTE|=2; // 2번째 줄 해제
 
 	PORTE&=~4; // 3번째 줄 선택
-	_delay_ms(3.5);
+	_delay_ms(30);
 	if((PINE&0x10)==0)keybuf='7';
 	if((PINE&0x20)==0)keybuf='8';
 	if((PINE&0x40)==0)keybuf='9';
 	PORTE|=4; // 3번째 줄 해제
 
 	PORTE&=~8; // 4번째 줄 선택
-	_delay_ms(3.5);
+	_delay_ms(30);
 	if((PINE&0x10)==0)keybuf='*';
 	if((PINE&0x20)==0)keybuf='0';
 	if((PINE&0x40)==0)keybuf='#';
