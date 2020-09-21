@@ -4,20 +4,20 @@
 #include <avr/interrupt.h>
 //
 volatile unsigned int  buf[3],dist[3],start=0,end=0;
-volatile unsigned char cnt=0,flag[3]={0,};
+volatile unsigned char cnt=0,flag[3]={0,0,0};
 //
 //에코핀
 ISR(INT0_vect) // 에코 PD0
 { 
 	if(EICRA==0x03)
-		start=TCNT1; 
+		start=TCNT3; 
 	else
 	{
-		end=TCNT1;
+		end=TCNT3;
 		buf[0]=end-start;
 		EIMSK=0;
 		flag[0]=1;
-		if (dist[0]<5)
+		if (dist[0]<0.5)
 		{
 			PORTF &= ~0x01;
 		}
@@ -31,14 +31,14 @@ ISR(INT0_vect) // 에코 PD0
 ISR(INT1_vect) // 에코 PD1
 {
 	if(EICRA==0x0C)
-		start=TCNT1;
+		start=TCNT3;
 	else
 	{
-		end=TCNT1;
+		end=TCNT3;
 		buf[1]=end-start;
 		EIMSK=0;
 		flag[1]=1;
-		if (dist[1]<5)
+		if (dist[1]<0.5)
 		{
 			PORTF &= ~0x02;			
 		}
@@ -52,14 +52,14 @@ ISR(INT1_vect) // 에코 PD1
 ISR(INT2_vect)  // 에코 PD2
 { 
 	if(EICRA==0x30)
-		start=TCNT1; 
+		start=TCNT3; 
 	else
 	{ 
-		end=TCNT1; 
+		end=TCNT3; 
 		buf[2]=end-start;
 		EIMSK=0;
 		flag[2]=1;
-		if (dist[2]<5)
+		if (dist[2]<0.5)
 		{
 			PORTF &= ~0x04;
 		}
@@ -72,7 +72,7 @@ ISR(INT2_vect)  // 에코 PD2
 }
 
 //트리거
-ISR(TIMER1_COMPA_vect)
+ISR(TIMER3_COMPA_vect)
 {
 	switch(cnt){
 		case 0: 
@@ -111,9 +111,9 @@ ISR(TIMER1_COMPA_vect)
 int main(void){
 	DDRD=0x70; // 트리거
 	DDRF=0x07;
-	TCCR1B=0x0C; 
-	OCR1A=3124; 
-	TIMSK=0x10; //16000000/256/(1+ 3124)=20Hz=50ms
+	TCCR3B=0x0C; 
+	OCR3A=3124; 
+	ETIMSK=0x10; //16000000/256/(1+ 3124)=20Hz=50ms
 	sei();//SREG=0x80;
 	while(1)
 	{
