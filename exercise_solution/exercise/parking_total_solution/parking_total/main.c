@@ -3,6 +3,7 @@
 #include <util/delay.h>
 #include <stdio.h>
 #include <string.h>
+#include <avr/interrupt.h>
 #include "clcd_D8.h"
 	
 char KeyScan();
@@ -18,21 +19,16 @@ void Warning();
 void AdminAreaNum();
 void AreaNumber();
 void GateOpen();
-void getEcho(int ch);
-int UltrasonicSensor(void);
+
+
 
 enum eWindowPosition { OPEN, INIT, Admin_1, User_1} currentPage ;
 
-//초음파센서 설정
-#define Trig1_ON PORTD|=1 //트리거1
-#define Trig2_ON PORTD|=2 //트리거2
-#define Trig3_ON PORTD|=4 //트리거3
+//초음파센서 변수
+volatile unsigned int  buf2[3],dist[3],start=0,end=0;
+volatile unsigned char cnt=0,flag[3]={0,0,0};
 
-#define Trig1_OFF PORTD&=~1 //트리거1
-#define Trig2_OFF PORTD&=~2 //트리거2
-#define Trig3_OFF PORTD&=~4 //트리거3
-
-//
+//비밀번호, 키 관련 변수
 char key;
 char keybuf[30];
 char buf[10];
@@ -40,37 +36,153 @@ char input_password [10];
 char inital_password [10]="1234";
 char area_password [3][5]= {" "," "," "};
 
-//초음파센서 변수
+ISR(INT0_vect) // 에코 PD0
+{
+	if(EICRA==0x03)
+	start=TCNT3;
+	else
+	{
+		end=TCNT3;
+		buf2[0]=end-start;
+		EIMSK=0;
+		flag[0]=1;
+		if (dist[0]<0.5)
+		{
+			PORTF &= ~0x01;
+		}
+		else
+		{
+			PORTF |= 0x01;
+		}
+	}
+	EICRA^=0x01;
+}
+ISR(INT1_vect) // 에코 PD1
+{
+	if(EICRA==0x0C)
+	start=TCNT3;
+	else
+	{
+		end=TCNT3;
+		buf2[1]=end-start;
+		EIMSK=0;
+		flag[1]=1;
+		if (dist[1]<0.5)
+		{
+			PORTF &= ~0x02;
+		}
+		else
+		{
+			PORTF |= 0x02;
+		}
+	}
+	EICRA^=0x04;
+}
+ISR(INT2_vect)  // 에코 PD2
+{
+	if(EICRA==0x30)
+	start=TCNT3;
+	else
+	{
+		end=TCNT3;
+		buf2[2]=end-start;
+		EIMSK=0;
+		flag[2]=1;
+		if (dist[2]<0.5)
+		{
+			PORTF &= ~0x04;
+		}
+		else
+		{
+			PORTF |= 0x04;
+		}
+	}
+	EICRA^=0x10;
+}
 
-char s[30];
-unsigned int range_I, range[4];
-float range_F;
-
-char temp[3]={'0','0','0'};
-
-
+//트리거
+ISR(TIMER3_COMPA_vect)
+{
+	switch(cnt){
+		case 0:
+		PORTD|=0x10;
+		_delay_us(10);
+		PORTD&=~0x10;
+		EICRA=0x03;
+		EICRB=0x00;
+		EIFR=0xFF;
+		EIMSK=0x01;
+		break;
+		
+		case 1:
+		PORTD|=0x20;
+		_delay_us(10);
+		PORTD&=~0x20;
+		EICRA=0x0C;
+		EICRB=0x00;
+		EIFR=0xFF;
+		EIMSK=0x02;
+		break;
+		
+		case 2:
+		PORTD|=0x40;
+		_delay_us(10);
+		PORTD&=~0x40;
+		EICRA=0x30;
+		EICRB=0x00;
+		EIFR=0xFF;
+		EIMSK=0x04;
+		break;
+	}
+	if(++cnt>3)cnt=0;
+}
 
 
 int main()
 {
+	//초음파 센서 관련 포트설정 및 타이머 설정
+	DDRD=0x70; // 트리거
+	DDRF=0x07;
+	TCCR3B=0x0C;
+	OCR3A=3124;
+	ETIMSK=0x10; //16000000/256/(1+ 3124)=20Hz=50ms
+	sei();//SREG=0x80;
+	
+	//clcd 초기화 및 parking system 시작
 	clcd_port_init();
 	clcd_init_8bit();
 	
 	clcd_position(0, 0);
 	clcd_str("Parking System");
-	_delay_ms(2000);
+	_delay_ms(1500);
 	clcd_init_8bit();
 	
 	while(1)
-	{
-		key = KeyScan();
+	{	
+		if(flag[0])
+		{
+			flag[0]=0;
+			dist[0]=(int)((float)buf2[0]/14.5);
+		}
+		if(flag[1])
+		{
+			flag[1]=0;
+			dist[1]=(int)((float)buf2[1]/14.5);
+		}
+		if(flag[2])
+		{
+			flag[2]=0;
+			dist[2]=(int)((float)buf2[2]/14.5);
+		}
 		
+		key = KeyScan();
+				
 		if(key == 0xFF && currentPage != OPEN)
 		{
 			continue;
 		}
 		else
-		{
+		{		
 			switch(currentPage)
 			{
 				case OPEN :
@@ -148,94 +260,8 @@ int main()
 	}
 }
 
-void getEcho(int ch){ // ch=0~3
-	while(!(PIND&(0x10<<ch)));  // Wait for echo pin to go high
-	TCNT1=0x00; TCCR1B=0x02;    // 1:8 prescaler = 0.5us
-	while(PIND&(0x10<<ch));     // Wait for echo pin to go low
-	TCCR1B=0x08; range_I=TCNT1; // the range in CM
-	range_F=(float)range_I;
-	range_F/=11.6; // mm
-	range[ch]=(unsigned int)range_F; // range[ch]에 저장
-}
 
-// int UltrasonicSensor(void)
-// {
-// 	
-// 	DDRD=0x0F;  // PD0~3 ouput Trigger, PD4~7 input Echo
-// 	DDRF=0x07;  //led output
-// 
-// 	TCCR1B=0x08;  // Set timer up in CTC mode
-// 	_delay_ms(100);
-// 	
-// 	while(1)
-// 	{
-// 		_delay_ms(25); Trig1_ON; _delay_us(10); Trig1_OFF; getEcho(0);
-// 		
-// 		if ((range[0]<50)) // range[0]이 범위 안일 때
-// 		{
-// 			_delay_ms(25); Trig2_ON; _delay_us(10); Trig2_OFF; getEcho(1);
-// 			
-// 			
-// 			if ((range[0]<50) && (range[1]<50))
-// 			{
-// 				_delay_ms(25); Trig3_ON; _delay_us(10); Trig3_OFF; getEcho(2);
-// 				
-// 				if ((range[0]<50) && (range[1]<50) && (range[2]<50))
-// 				{
-// 					PORTF = 0b00000000;
-// 				}
-// 				else if((range[0]<50) && (range[1]<50) && (range[2]>50))
-// 				{
-// 					PORTF = 0b00000100;
-// 				}
-// 			}
-// 			else if((range[0]<50) && (range[1]>50))
-// 			{
-// 				_delay_ms(25); Trig3_ON; _delay_us(10); Trig3_OFF; getEcho(2);
-// 				
-// 				if ((range[0]<50) && (range[1]>50) && (range[2]<50))
-// 				{
-// 					PORTF = 0b00000010;
-// 				}
-// 				else if((range[0]<50) && (range[1]>50) && (range[2]>50))
-// 				{
-// 					PORTF = 0b00000110;
-// 				}
-// 				
-// 			}
-// 		}
-// 		else if(range[0]>50) // range[0]이 범위 밖일 때
-// 		{
-// 			_delay_ms(25); Trig2_ON; _delay_us(10); Trig2_OFF; getEcho(1);
-// 			if((range[0]>50) && (range[1]<50))
-// 			{
-// 				_delay_ms(25); Trig3_ON; _delay_us(10); Trig3_OFF; getEcho(2);
-// 				if ((range[0]>50) && (range[1]<50) && (range[2]<50))
-// 				{
-// 					PORTF = 0b00000001;
-// 				}
-// 				else if ((range[0]>50) && (range[1]<50) && (range[2]>50))
-// 				{
-// 					PORTF = 0b00000101;
-// 				}
-// 			}
-// 			else if((range[0]>50) && (range[1]>50))
-// 			{
-// 				_delay_ms(25); Trig3_ON; _delay_us(10); Trig3_OFF; getEcho(2);
-// 				if ((range[0]>50) && (range[1]>50) && (range[2]<50))
-// 				{
-// 					PORTF = 0b00000011;
-// 				}
-// 				else if ((range[0]>50) && (range[1]>50) && (range[2]>50))
-// 				{
-// 					PORTF = 0b00000111;
-// 				}
-// 			}
-// 			
-// 		}
-// 		
-// 	}
-// }
+
 
 void Open()
 {
@@ -419,8 +445,8 @@ void CheckUserPW(int num2) // 유저 모드 비번 확인
 		_delay_ms(1000);
 		clcd_init_8bit();
 		GateOpen();
+		
 		currentPage = OPEN;
-		//게이트 열리는 코딩
 	}
 	else
 	{
@@ -443,6 +469,9 @@ void GateOpen()
 	
 	//currentPage = OPEN;
 }
+
+
+
 
 
 char KeyScan()
