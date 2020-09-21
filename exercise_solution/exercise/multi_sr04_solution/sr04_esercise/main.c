@@ -42,11 +42,16 @@ int main(void)
 	
 	while(1)
 	{
-		_delay_ms(25); Trig1_ON; _delay_us(10); Trig1_OFF; getEcho(0);
+		_delay_ms(25); 
+		Trig1_ON; 
+		_delay_us(10); 
+		Trig1_OFF; 
+		getEcho(0);
 		
 		if ((range[0]<50)) // range[0]이 범위 안일 때
 		{
-			_delay_ms(25); Trig2_ON; _delay_us(10); Trig2_OFF; getEcho(1);
+			_delay_ms(25); 
+			Trig2_ON; _delay_us(10); Trig2_OFF; getEcho(1);
 			
 			
 			if ((range[0]<50) && (range[1]<50))
