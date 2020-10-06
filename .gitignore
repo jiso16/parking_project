@@ -30,3 +30,5 @@ exercise_solution/exercise/SRF_04_exercise/SRF_04/clcd_D8.h
 exercise_solution/exercise/parking_total_solution/parking_total/Debug
 exercise_solution/exercise/parking_total_solution/parking_total/clcd_D8.h
 exercise_solution/exercise/interrupt_exercise_solution/interrupt_exercise/Debug
+exercise_solution/exercise/interrupt_Exercise2_solution/interrupt_Exercise2/Debug
+*.h
