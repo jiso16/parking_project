@@ -571,7 +571,7 @@ int main()
 			case KEY2:
 			{
 				int i = 9;
-
+				
 				while(1)
 				{
 					key=KeyScan();
@@ -603,10 +603,6 @@ int main()
 				}
 				break;
 			}
-// 			case  Key_Change:
-// 			{
-// 				ChangePw();
-// 			}
 			case AREA2:
 			{
 				key=KeyScan();
