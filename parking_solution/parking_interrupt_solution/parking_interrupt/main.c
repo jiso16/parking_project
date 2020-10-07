@@ -17,12 +17,19 @@ void io_setting();
 void Warning();
 void timer();
 void ChangePw(int num);
+void CheckUserPW(int num2);
+void GateClose();
+void GateOpen();
+void InitUserMode();
+void UserPwInput(int num);
+
+
 
 
 enum eWindowPosition { OPEN, OPEN2, OPEN3,
 	KEY,KEY2, KEY_MODE,PW_INPUT,Admin_PW,Admin_PW_OK,
 	AREA, Area_Num,Change_PW,Key_Change, PW_Change_OK,
-AREA2, Area_Num2, Gate_Open,Gate_Close} currentPage ;
+AREA2, Area_Num2, Gate_Open,Gate_Close,PW_Input} currentPage ;
 
 //초음파센서 변수
 volatile unsigned int  buf2[3],dist[3],start=0,end=0;
@@ -184,13 +191,18 @@ ISR(TIMER0_OVF_vect)
 			clcd_str("Password changed!");
 			currentPage = Admin_PW_OK;
 		}
-		
 		case Area_Num2:
+		{
+			if(x>1500)
+			{
+				AreaNum();
+				currentPage = PW_Input;
+			}
+		}
+		case PW_Input:
 		{
 			if(x>2000)
 			{
-				AreaNum();
-				
 				if (strcmp(buf,"1")==0)
 				{
 					UserPwInput(0);
@@ -208,6 +220,24 @@ ISR(TIMER0_OVF_vect)
 					Warning();
 				}
 				
+				x = 0;
+			}
+			break;
+		}
+		case Gate_Open:
+		{
+			if(x>1500)
+			{
+				GateOpen();
+				x = 0;
+			}
+			break;
+		}
+		case Gate_Close:
+		{
+			if(x>1500)
+			{
+				GateClose();
 				x = 0;
 			}
 			break;
@@ -329,7 +359,6 @@ void AreaNum()
 	clcd_init_8bit();
 	clcd_str("Area ");
 	clcd_str(buf);
-	//currentPage = Change_PW;
 }
 
 void PwInput() // 관리자모드 비번 입력
@@ -403,7 +432,7 @@ void CheckUserPW(int num2) // 유저 모드 비번 확인
 		clcd_init_8bit();
 		clcd_str("Have a nice day");
 		
-		GateOpen();
+		currentPage = Gate_Open;
 	}
 	else
 	{
@@ -416,12 +445,20 @@ void CheckUserPW(int num2) // 유저 모드 비번 확인
 void GateOpen()
 {
 	DDRB=0x20;   // PB5 out
-	TCCR1A=0x82; TCCR1B=0x1A; OCR1A=3000; ICR1=19999; // OCR1A -> OC Clear / Fast PWM TOP = ICR1 / 8ºÐÁÖ
+	TCCR1A=0x82; TCCR1B=0x1A; OCR1A=3000; ICR1=19999; // OCR1A -> OC Clear / Fast PWM TOP = ICR1 / 8ºÐ??
 	
 	OCR1A = 1900; // 0 degree
-	_delay_ms(3000);
+	
+	currentPage = Gate_Close;
+}
+
+void GateClose()
+{
+	DDRB=0x20;   // PB5 out
+	TCCR1A=0x82; TCCR1B=0x1A; OCR1A=3000; ICR1=19999; // OCR1A -> OC Clear / Fast PWM TOP = ICR1 / 8ºÐ??
+
 	OCR1A = 700; // 90 degree
-	_delay_ms(500);
+	
 	
 	currentPage = OPEN2;
 }
