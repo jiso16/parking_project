@@ -1,28 +1,37 @@
-#define F_CPU 16000000UL // 16 MHz
+#define F_CPU 16000000
 #include <avr/io.h>
+#include <avr/interrupt.h>
 #include <util/delay.h>
 #include <stdio.h>
-#include <string.h>
-#include <avr/interrupt.h>
 #include "clcd_D8.h"
 
 char KeyScan();
-void PwInput(); //관리자 모드 비밀번호 입력
-void CheckAdminPW(); // 관리자 모드 비밀번호 확인
-void ChangePw();//관리자 모드에서 비번 바꾸기
-void UserPwInput (); // 유저 비밀번호 입력
-void CheckUserPW(); // 유저 비밀번호 확인
-void Open();
 void Init();
-void InitUserMode();
+void AreaNum();
+void PwInput();
+void CheckAdminPW();
+void print_Str();
+void Open();
+void Open2();
+void io_setting();
 void Warning();
-void AdminAreaNum();
-void AreaNumber();
+void timer();
+//void ChangePw();
+void CheckUserPW(int num2);
+void GateClose();
 void GateOpen();
+void InitUserMode();
+void UserPwInput();
+void AreaNum2();
 
 
 
-enum eWindowPosition { OPEN, INIT, Admin_1, User_1} currentPage ;
+
+enum eWindowPosition { OPEN, OPEN2, OPEN3,
+	KEY,KEY2,KEY3, KEY4, KEY_MODE,PW_INPUT,Admin_PW,Admin_PW_OK,
+	AREA, Area_Num,AREA2, Area_Num2, PW_Change_OK,
+	Gate_Open,Gate_Close,PW_Input, Check_User_PW
+} currentPage ;
 
 //초음파센서 변수
 volatile unsigned int  buf2[3],dist[3],start=0,end=0;
@@ -32,9 +41,240 @@ volatile unsigned char cnt=0,flag[3]={0,0,0};
 char key;
 char keybuf[30];
 char buf[10];
-char input_password [10];
-char inital_password [10]="1234";
+char input_password [4];
+char inital_password [4]="1234";
 char area_password [3][5]= {" "," "," "};
+int i = 9;
+int k = 7;
+int m = 0;
+int num = 0;
+int num2 = 0;
+
+volatile int x;
+
+ISR(TIMER0_OVF_vect)
+{
+	TCNT0 = -250;
+	x++;
+	
+	switch(currentPage)
+	{
+		case OPEN :
+		{
+			if(x>1000)
+			{
+				print_Str();
+				
+				currentPage = OPEN2;
+				
+				x = 0;
+			}
+			
+			break;
+		}
+		case  OPEN2:
+		{
+			if(x>1000)
+			{
+				Open();
+				
+				currentPage = OPEN3;
+				
+				x = 0;
+			}
+			break;
+		}
+		case  OPEN3:
+		{
+			if(x>1000)
+			{
+				Open2();
+				
+				currentPage = KEY;
+				
+				x = 0;
+			}
+			break;
+		}
+		case  KEY_MODE:
+		{
+			if(x>1000)
+			{
+				Init();
+				if(strcmp(buf,"1")==0)
+				{
+					//관리자모드 진입
+					currentPage = PW_INPUT;
+					
+				}
+				else if (strcmp (buf,"2")==0)
+				{
+					//유저모드 진입
+					InitUserMode();
+					currentPage = AREA2;
+				}
+				else
+				{
+					Warning();
+				}
+				
+				x = 0;
+			}
+			break;
+		}
+		case PW_INPUT:
+		{
+			if(x>1000)
+			{
+				PwInput();
+				
+				currentPage = KEY2;
+				
+				x = 0;
+			}
+			break;
+		}
+		case Admin_PW:
+		{
+			if(x>1000)
+			{
+				CheckAdminPW();
+				
+				x = 0;
+			}
+			break;
+		}
+		case Admin_PW_OK:
+		{
+			if(x>1000)
+			{
+				clcd_init_8bit();
+				clcd_str("Which position");
+				clcd_position(1,0);
+				clcd_str("change the PW?");
+				
+				currentPage = AREA;
+				x = 0;
+			}
+			break;
+		}
+		case Area_Num:
+		{
+			if(x>2000)
+			{
+				AreaNum();
+				if (strcmp(buf,"1")==0)
+				{
+					num = 0;
+					currentPage = KEY3;
+
+				}
+				else if(strcmp(buf,"2")==0)
+				{
+					num = 1;
+					currentPage = KEY3;
+				}
+				else if(strcmp(buf,"3")==0)
+				{
+					num = 2;
+					currentPage = KEY3;
+				}
+				else if(strcmp(buf,"#")==0)
+				{
+					clcd_init_8bit();
+					currentPage = OPEN2;
+				}
+
+				break;
+				
+				
+				x = 0;
+			}
+			break;
+		}
+		case PW_Change_OK:
+		{
+			if(x>1500)
+			{
+				clcd_init_8bit();
+				clcd_str("Password changed!");
+				
+				currentPage = Admin_PW_OK;
+				x = 0;
+			}
+			break;
+		}
+		case Area_Num2:
+		{
+			if(x>1500)
+			{
+				AreaNum2();
+				currentPage = PW_Input;
+				x=0;
+			}
+			break;
+		}
+		case PW_Input:
+		{
+			if(x>1500)
+			{
+				UserPwInput();
+				if (strcmp(buf,"1")==0)
+				{
+					num2 = 0;
+					currentPage = KEY4;
+
+				}
+				else if(strcmp(buf,"2")==0)
+				{
+					num2 = 1;
+					currentPage = KEY4;
+				}
+				else if(strcmp(buf,"3")==0)
+				{
+					num2 = 2;
+					currentPage = KEY4;
+				}
+				else
+				{
+					Warning();
+				}
+				x=0;
+			}
+			
+			break;
+		}
+		case Check_User_PW:
+		{
+			if(x>1500)
+			{
+				CheckUserPW(num2);
+				
+				x = 0;
+				
+			}
+		}
+		case Gate_Open:
+		{
+			if(x>1500)
+			{
+				GateOpen();
+				x = 0;
+			}
+			break;
+		}
+		case Gate_Close:
+		{
+			if(x>1500)
+			{
+				GateClose();
+				x = 0;
+			}
+			break;
+		}
+	}
+}
+
 
 ISR(INT0_vect) // 에코 PD0
 {
@@ -57,6 +297,7 @@ ISR(INT0_vect) // 에코 PD0
 	}
 	EICRA^=0x01;
 }
+
 ISR(INT1_vect) // 에코 PD1
 {
 	if(EICRA==0x0C)
@@ -100,18 +341,17 @@ ISR(INT2_vect)  // 에코 PD2
 	EICRA^=0x10;
 }
 
-//트리거
 ISR(TIMER3_COMPA_vect)
 {
-	switch(cnt){
+	switch(cnt)
+	{
 		case 0:
 		PORTD|=0x10;
 		_delay_us(10);
 		PORTD&=~0x10;
-		EICRA=0x03;
-		EICRB=0x00;
-		EIFR=0xFF;
-		EIMSK=0x01;
+		EICRA=0x03; //인터럽트 0~3 설정
+		EIFR=0xFF;  // 인터럽트 클리어 해주는 레지스터
+		EIMSK=0x01; // 개별적 인터럽트 허용 레지스터
 		break;
 		
 		case 1:
@@ -119,7 +359,6 @@ ISR(TIMER3_COMPA_vect)
 		_delay_us(10);
 		PORTD&=~0x20;
 		EICRA=0x0C;
-		EICRB=0x00;
 		EIFR=0xFF;
 		EIMSK=0x02;
 		break;
@@ -129,196 +368,35 @@ ISR(TIMER3_COMPA_vect)
 		_delay_us(10);
 		PORTD&=~0x40;
 		EICRA=0x30;
-		EICRB=0x00;
 		EIFR=0xFF;
 		EIMSK=0x04;
 		break;
 	}
-	if(++cnt>3)cnt=0;
-}
-
-
-int main()
-{
-	//초음파 센서 관련 포트설정 및 타이머 설정
-	DDRD=0x70; // 트리거
-	DDRF=0x07;
-	TCCR3B=0x0C;
-	OCR3A=3124;
-	ETIMSK=0x10; //16000000/256/(1+ 3124)=20Hz=50ms
-	sei();//SREG=0x80;
-	
-	//clcd 초기화 및 parking system 시작
-	clcd_port_init();
-	clcd_init_8bit();
-	
-	clcd_position(0, 0);
-	clcd_str("Parking System");
-	_delay_ms(1500);
-	clcd_init_8bit();
-	
-	while(1)
-	{
-		if(flag[0])
-		{
-			flag[0]=0;
-			dist[0]=(int)((float)buf2[0]/14.5);
-		}
-		if(flag[1])
-		{
-			flag[1]=0;
-			dist[1]=(int)((float)buf2[1]/14.5);
-		}
-		if(flag[2])
-		{
-			flag[2]=0;
-			dist[2]=(int)((float)buf2[2]/14.5);
-		}
-		
-		key = KeyScan();
-		
-		if(key == 0xFF && currentPage != OPEN)
-		{
-			continue;
-		}
-		else
-		{
-			switch(currentPage)
-			{
-				case OPEN :
-				{
-					Open();
-					break;
-				}
-				
-				case INIT:
-				{
-					Init();
-					
-					if(strcmp(buf,"1")==0)
-					{
-						//관리자모드 진입
-						PwInput();
-						
-					}
-					else if (strcmp (buf,"2")==0)
-					{
-						//유저모드 진입
-						InitUserMode();
-					}
-					else
-					{
-						Warning();
-					}
-					break;
-				}
-				case Admin_1 :
-				{
-					AdminAreaNum();
-					
-					if (strcmp(buf,"1")==0)
-					{
-						ChangePw(0);
-					}
-					else if(strcmp(buf,"2")==0)
-					{
-						ChangePw(1);
-					}
-					else if(strcmp(buf,"3")==0)
-					{
-						ChangePw(2);
-					}
-					else
-					{
-						Warning();
-					}
-					break;
-				}
-				case User_1 :
-				{
-					AreaNumber();
-					if(strcmp(buf,"1")==0)
-					{
-						UserPwInput(0);
-					}
-					else if (strcmp(buf,"2")==0)
-					{
-						UserPwInput(1);
-					}
-					else if (strcmp(buf,"3")==0)
-					{
-						UserPwInput(2);
-					}
-					else
-					{
-						Warning();
-					}
-					break;
-				}
-			}
-		}
-	}
-}
-
-
-
-
-void Open()
-{
-	clcd_init_8bit();
-	clcd_str("Select the mode");
-	_delay_ms(2000);
-	clcd_init_8bit();
-	clcd_str("1) Admin mode");
-	clcd_position(1, 0);
-	clcd_str("2) Visitor mode");
-	currentPage = INIT;
-}
-
-void Init()
-{
-	clcd_init_8bit();
-	clcd_str("mode ");
-	sprintf(buf,"%c",key);
-	clcd_str(buf);
-	_delay_ms(1000);
-	clcd_init_8bit();
+	if(++cnt>3)
+	cnt=0;
 }
 
 void InitUserMode()
 {
-	currentPage = User_1;
+	clcd_init_8bit();
 	clcd_str("Visitor mode.");
 	clcd_position(1, 0);
 	clcd_str("Enter Your Area");
 }
 
-void Warning()
-{
-	currentPage = OPEN;
-	clcd_str("Wrong Number!");
-	_delay_ms(1000);
-	clcd_init_8bit();
-}
-
-void AdminAreaNum()
+void AreaNum()
 {
 	clcd_init_8bit();
 	clcd_str("Area ");
-	sprintf(buf,"%c",key);
 	clcd_str(buf);
-	_delay_ms(1000);
-	clcd_init_8bit();
+	clcd_position(1,0);
+	clcd_str("New PW:");
 }
-
-void AreaNumber()
+void AreaNum2()
 {
 	clcd_init_8bit();
 	clcd_str("Area ");
-	sprintf(buf,"%c",key);
 	clcd_str(buf);
-	_delay_ms(1000);
-	clcd_init_8bit();
 }
 
 void PwInput() // 관리자모드 비번 입력
@@ -328,24 +406,6 @@ void PwInput() // 관리자모드 비번 입력
 	clcd_str("Enter the Admin");
 	clcd_position(1,0);
 	clcd_str("password:");
-	int i = 9;
-	while(1)
-	{
-		key=KeyScan();
-		if(key != 0xFF)
-		{
-			clcd_position(1,i);
-			sprintf(buf, "%c", key);
-			clcd_str(buf);
-			input_password[i-9] = key;
-			i++;
-			if(strcmp(buf,"*")==0)
-			{
-				CheckAdminPW();
-				break;
-			}
-		}
-	}
 }
 
 void CheckAdminPW() // 관리자 모드 비번 확인
@@ -361,71 +421,20 @@ void CheckAdminPW() // 관리자 모드 비번 확인
 	}
 	if(isMatch == 1)
 	{
-		clcd_str("Okay");
-		_delay_ms(1000);
-		clcd_init_8bit();
-		clcd_str("Which position");
-		clcd_position(1,0);
-		clcd_str("change the PW?");
-		currentPage = Admin_1;
+		//i = 9;
+		currentPage = Admin_PW_OK;
 	}
 	else
 	{
 		clcd_str("Wrong PW");
-		currentPage = OPEN;
+		currentPage = OPEN2;
 	}
 	
 }
-
-void ChangePw(int num) //관리자 모드에서 비번 바꾸기
-{
-	clcd_init_8bit();
-	int i = 0;
-	clcd_str("Enter the new PW");
-	while(1)
-	{
-		key=KeyScan();
-		if(key != 0xFF)
-		{
-			clcd_position(1,i);
-			sprintf(buf, "%c", key);
-			clcd_str(buf);
-			area_password[num][i] = key;
-			i++;
-			if(strcmp(buf,"*")==0)
-			{
-				clcd_init_8bit();
-				clcd_str("Password changed!");
-				_delay_ms(1000);
-				currentPage = OPEN;
-				break;
-			}
-		}
-	}
-}
-
-void UserPwInput(int num) // 유저 비번 확인
+void UserPwInput() // 유저 비번 확인
 {
 	clcd_init_8bit();
 	clcd_str("Enter the PW");
-	int i = 0;
-	while(1)
-	{
-		key=KeyScan();
-		if(key != 0xFF)
-		{
-			clcd_position(1,i);
-			sprintf(buf, "%c", key);
-			clcd_str(buf);
-			input_password[i] = key;
-			i++;
-			if(strcmp(buf,"*")==0)
-			{
-				CheckUserPW(num);
-				break;
-			}
-		}
-	}
 }
 
 void CheckUserPW(int num2) // 유저 모드 비번 확인
@@ -441,18 +450,15 @@ void CheckUserPW(int num2) // 유저 모드 비번 확인
 	}
 	if(isMatch == 1)
 	{
-		clcd_str("Correct");
-		_delay_ms(1000);
 		clcd_init_8bit();
-		GateOpen();
+		clcd_str("Have a nice day");
 		
-		currentPage = OPEN;
+		currentPage = Gate_Open;
 	}
 	else
 	{
 		clcd_str("Wrong PW");
-		_delay_ms(1000);
-		currentPage = OPEN;
+		currentPage = OPEN2;
 	}
 	
 }
@@ -460,19 +466,212 @@ void CheckUserPW(int num2) // 유저 모드 비번 확인
 void GateOpen()
 {
 	DDRB=0x20;   // PB5 out
-	TCCR1A=0x82; TCCR1B=0x1A; OCR1A=3000; ICR1=19999; // OCR1A -> OC Clear / Fast PWM TOP = ICR1 / 8ºÐÁÖ
+	TCCR1A=0x82; TCCR1B=0x1A; OCR1A=3000; ICR1=19999; // OCR1A -> OC Clear / Fast PWM TOP = ICR1 / 8ºÐ??
 	
 	OCR1A = 1900; // 0 degree
-	_delay_ms(3000);
-	OCR1A = 700; // 90 degree
-	_delay_ms(30);
 	
-	//currentPage = OPEN;
+	currentPage = Gate_Close;
+}
+
+void GateClose()
+{
+	DDRB=0x20;   // PB5 out
+	TCCR1A=0x82; TCCR1B=0x1A; OCR1A=3000; ICR1=19999; // OCR1A -> OC Clear / Fast PWM TOP = ICR1 / 8ºÐ??
+
+	OCR1A = 700; // 90 degree
+	
+	
+	currentPage = OPEN2;
 }
 
 
 
+void Init()
+{
+	clcd_init_8bit();
+	clcd_str("mode ");
+	clcd_str(buf);
+}
 
+void Open()
+{
+	clcd_init_8bit();
+	clcd_str("Select the mode");
+	
+}
+
+void Open2()
+{
+	clcd_init_8bit();
+	clcd_str("1) Admin mode");
+	clcd_position(1, 0);
+	clcd_str("2) Visitor mode");
+}
+
+void Warning()
+{
+	clcd_init_8bit();
+	clcd_str("Wrong Number!");
+	currentPage = OPEN;
+}
+void print_Str()
+{
+	
+	clcd_position(0, 0);
+	clcd_str("Parking System");
+	
+}
+
+void io_setting()
+{
+	DDRA = 0xFF;
+}
+
+void timer()
+{
+	TCCR0 = ((1<<CS02)|(0<<CS01)|(0<<CS00));
+	TCNT0 = -250;
+	TIMSK = ((1<<TOIE0));
+}
+
+
+int main()
+{
+	timer();
+	io_setting();
+	
+	DDRD=0x70; // 트리거
+	DDRF=0x07;
+	TCCR3B=0x0C;
+	OCR3A=3124;
+	ETIMSK=0x10; //16000000/256/(1+ 3124)=20Hz=50ms
+	
+	sei();
+	
+	clcd_port_init();//CPU초기화
+	clcd_init_8bit();//LCD초기화
+	
+	int i = 9;
+	
+	while (1)
+	{
+		
+		switch(currentPage)
+		{
+			case KEY:
+			{
+				key=KeyScan();
+				
+				if(key != 0xFF)
+				{
+					sprintf(buf,"%c",key);
+					currentPage = KEY_MODE;
+				}
+				break;
+			}
+			case KEY2:
+			{
+				
+				key=KeyScan();
+				
+				if(key != 0xFF)
+				{
+					clcd_position(1,i);
+					sprintf(buf,"%c",key);
+					clcd_str(buf);
+					input_password[i-9] = key;
+					i++;
+					if(strcmp(buf,"*")==0)
+					{
+						i = 9;
+						currentPage = Admin_PW;
+						
+						break;
+					}
+				}
+				break;
+			}
+			//break;
+			case KEY3:
+			{
+				key=KeyScan();
+				if(key != 0xFF)
+				{
+					clcd_position(1,k);
+					sprintf(buf, "%c", key);
+					clcd_str(buf);
+					area_password[num][k-7] = key;
+					k++;
+					if(strcmp(buf,"*")==0)
+					{
+						k = 7;
+						currentPage = PW_Change_OK;
+						break;
+						
+					}
+				}
+				break;
+			}
+			//break;
+			case KEY4:
+			{
+				key=KeyScan();
+				if(key != 0xFF)
+				{
+					clcd_position(1,m);
+					sprintf(buf, "%c", key);
+					clcd_str(buf);
+					input_password[m] = key;
+					m++;
+					if(strcmp(buf,"*")==0)
+					{
+						m = 0;
+						currentPage = Check_User_PW;
+					}
+				}
+				break;
+			}
+			//break;
+			case AREA:
+			{
+				key=KeyScan();
+				
+				if(key != 0xFF)
+				{
+					sprintf(buf,"%c",key);
+					currentPage = Area_Num;
+				}
+				break;
+			}
+			case AREA2:
+			{
+				key=KeyScan();
+				
+				if(key != 0xFF)
+				{
+					sprintf(buf,"%c",key);
+					currentPage = Area_Num2;
+				}
+				break;
+			}
+		}
+		if(flag[0])
+		{
+			flag[0]=0;
+			dist[0]=(int)((float)buf2[0]/14.5);
+		}
+		if(flag[1])
+		{
+			flag[1]=0;
+			dist[1]=(int)((float)buf2[1]/14.5);
+		}
+		if(flag[2])
+		{
+			flag[2]=0;
+			dist[2]=(int)((float)buf2[2]/14.5);
+		}
+	}
+}
 
 char KeyScan()
 {
@@ -483,28 +682,28 @@ char KeyScan()
 	DDRE=0x0F;         // 비트0,1,2,3 출력으로 지정
 
 	PORTE&=~1; // 1번째 줄 선택
-	_delay_ms(28);
+	_delay_ms(30);
 	if((PINE&0x10)==0)keybuf='1';
 	if((PINE&0x20)==0)keybuf='2';
 	if((PINE&0x40)==0)keybuf='3';
 	PORTE|=1; // 1번째 줄 해제
 
 	PORTE&=~2; // 2번째 줄 선택
-	_delay_ms(28);
+	_delay_ms(30);
 	if((PINE&0x10)==0)keybuf='4';
 	if((PINE&0x20)==0)keybuf='5';
 	if((PINE&0x40)==0)keybuf='6';
 	PORTE|=2; // 2번째 줄 해제
 
 	PORTE&=~4; // 3번째 줄 선택
-	_delay_ms(28);
+	_delay_ms(30);
 	if((PINE&0x10)==0)keybuf='7';
 	if((PINE&0x20)==0)keybuf='8';
 	if((PINE&0x40)==0)keybuf='9';
 	PORTE|=4; // 3번째 줄 해제
 
 	PORTE&=~8; // 4번째 줄 선택
-	_delay_ms(28);
+	_delay_ms(30);
 	if((PINE&0x10)==0)keybuf='*';
 	if((PINE&0x20)==0)keybuf='0';
 	if((PINE&0x40)==0)keybuf='#';
@@ -512,5 +711,3 @@ char KeyScan()
 	
 	return keybuf;
 }
-
-
