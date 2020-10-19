@@ -1,16 +1,11 @@
 ﻿#include "parking.h"
 
 //비밀번호, 키 관련 변수
-char key;
-char keybuf[30];
 char buf[10];
 char input_password [4];
 char inital_password [4];
 char area_password [3][5];
-int i ;
-int k ;
-int m ;
-int num ;
+
 int num2 ;
 
 volatile int x;

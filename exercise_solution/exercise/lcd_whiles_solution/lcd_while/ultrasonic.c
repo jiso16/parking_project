@@ -1,19 +1,5 @@
 ﻿#include "parking.h"
 
-char key;
-char keybuf[30];
-char buf[10];
-char input_password [4];
-char inital_password [4];
-char area_password [3][5];
-int i ;
-int k ;
-int m ;
-int num ;
-int num2 ;
-
-volatile int x;
-
 //초음파센서 변수
 volatile unsigned int  buf2[3],dist[3],start,end;
 volatile unsigned char cnt,flag[3];
